@@ -38,17 +38,14 @@ chaîne de données fiable, et comment dire honnêtement ce que les données per
 ## Architecture
 
 ```mermaid
-flowchart LR
-    NASA[("NASA<br/>fichiers .mat<br/>34 cellules")] --> ING["Ingestion Python<br/>idempotente"]
-    subgraph PG["PostgreSQL 17"]
-        RAW[raw] --> STG[staging] --> MARTS[marts]
-    end
+flowchart TD
+    NASA[("NASA : fichiers .mat<br/>34 cellules")] --> ING["Ingestion Python<br/>idempotente"]
     ING --> RAW
-    DBT["dbt<br/>seed, modèles, tests"] -.-> STG
-    DBT -.-> MARTS
-    MARTS --> ANA["Analyse Python<br/>genou, fin de vie, backtest"]
-    ANA --> MARTS
-    MARTS -->|"rôle api_ro<br/>lecture seule"| API["API FastAPI"]
+    subgraph PG["PostgreSQL 17"]
+        RAW[raw] -->|dbt| STG[staging] -->|dbt| MARTS[marts]
+    end
+    MARTS <-->|lit et écrit| ANA["Analyse Python<br/>genou, fin de vie, backtest"]
+    MARTS -->|"rôle api_ro, lecture seule"| API["API FastAPI"]
     API --> DASH["Dashboard Streamlit"]
 ```
 
