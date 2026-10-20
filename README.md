@@ -120,6 +120,14 @@ Méthode détaillée : [`docs/degradation.md`](docs/degradation.md). Données et
   d'accessibilité dans les graphiques, et changer de thème Streamlit en direct ne redessine pas les graphiques
   avant un rechargement. L'image du dashboard est lourde (~1,5 Go).
 
+## Comment ce projet a été réalisé
+
+Projet conçu et piloté par Nicolas Journel, **développé avec l'assistance de l'IA** : [Claude](https://claude.com/claude-code)
+(Anthropic), utilisé via Claude Code, a écrit l'essentiel du code, des tests et de la documentation. Les choix de
+périmètre (jeu de données NASA, pile technique, découpage en étapes, licence, publication) ont été décidés par
+l'auteur, et le comportement a été contrôlé par des tests, la CI et des relectures visuelles des graphiques. Les
+commits portent la mention `Co-Authored-By: Claude`. Ce document est volontairement explicite sur ce point.
+
 ## Structure
 
 ```
