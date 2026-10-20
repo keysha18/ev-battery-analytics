@@ -21,4 +21,13 @@ check "api_ro ne voit pas staging" "f" "$(api -c "select has_schema_privilege('s
 check "api_ro n'est pas superuser" "f" "$(api -c "select rolsuper from pg_roles where rolname = current_user")"
 check "api_ro ne peut pas créer dans marts" "f" "$(api -c "select has_schema_privilege('marts','CREATE')")"
 
+# Après `make dbt-build` : l'API (rôle api_ro) doit lire les marts et rien d'autre
+if [ "$(admin -c "select to_regclass('marts.dim_battery') is not null")" = "t" ]; then
+  check "api_ro lit marts.dim_battery (34 cellules)" "34" "$(api -c "select count(*) from marts.dim_battery")"
+  check "api_ro refusé sur staging.stg_nasa_cycles" "denied" \
+    "$(api -c "select 1 from staging.stg_nasa_cycles limit 1" >/dev/null 2>&1 && echo readable || echo denied)"
+  check "api_ro refusé sur raw.nasa_cycles" "denied" \
+    "$(api -c "select 1 from raw.nasa_cycles limit 1" >/dev/null 2>&1 && echo readable || echo denied)"
+fi
+
 exit $fail

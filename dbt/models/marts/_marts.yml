@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: dim_battery
+    description: "Une ligne par cellule NASA (34), avec ses conditions d'essai et sa volumétrie."
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "n_discharges = n_valid_discharges + n_invalid_discharges"
+    columns:
+      - name: cell_id
+        description: Identifiant NASA (B00xx), clé naturelle.
+        data_tests: [unique, not_null]
+      - name: n_valid_discharges
+        description: Décharges exploitables pour l'analyse de dégradation.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1}
+      - name: eol_fade_pct
+        description: Perte de capacité qui définit la fin de vie (NULL si non précisée par NASA).
+
+  - name: fact_discharge
+    description: >
+      Une ligne par décharge (2 794). Contient aussi les décharges invalides, marquées par
+      is_valid_capacity ; les analyses doivent filtrer dessus.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cell_id, cycle_idx]
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cell_id, discharge_number]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "(valid_discharge_number is not null) = is_valid_capacity"
+    columns:
+      - name: cell_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_battery')
+                field: cell_id
+      - name: elapsed_days
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0}
+      - name: capacity_ah
+        description: Capacité mesurée (Ah). Peut être NULL ou 0 si is_valid_capacity est faux.
+
+  - name: fact_impedance
+    description: Une ligne par mesure d'impédance (EIS), avec le nombre de décharges déjà réalisées.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cell_id, impedance_number]
+    columns:
+      - name: cell_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_battery')
+                field: cell_id
+      - name: discharges_before
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0}

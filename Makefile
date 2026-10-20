@@ -30,7 +30,7 @@ psql:  ## Ouvre un shell psql
 	$(PSQL)
 
 check:  ## Smoke test du socle (schémas, droits du rôle API)
-	./tests/smoke_db.sh
+	bash tests/smoke_db.sh
 
 download:  ## Télécharge et extrait le dataset NASA (vérifié par sha256)
 	uv run python -m src.ingest.download
