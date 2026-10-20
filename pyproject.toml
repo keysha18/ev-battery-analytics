@@ -1,0 +1,26 @@
+[project]
+name = "ev-battery-analytics"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+    "psycopg[binary]>=3.3.6",
+    "scipy>=1.18.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["integration: nécessite le Postgres du docker-compose (make up)"]
+# Une perte silencieuse de partie imaginaire ne doit plus passer inaperçue
+filterwarnings = ["error::numpy.exceptions.ComplexWarning"]
+
+[tool.ruff]
+line-length = 110

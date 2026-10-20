@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: ev_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      API_RO_USER: ${API_RO_USER}
+      API_RO_PASSWORD: ${API_RO_PASSWORD}
+    ports:
+      # Exposé uniquement en local, pas sur le réseau
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Exécutés une seule fois, à la création du volume
+      - ./sql/00_init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
