@@ -1,0 +1,30 @@
+name: ev_battery
+version: "0.1.0"
+config-version: 2
+profile: ev_battery
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Plausibilité d'une capacité de décharge, en fraction de la capacité nominale de la cellule.
+  # Les capacités mesurées présentent une coupure nette entre ~0,48 Ah et ~0,53 Ah (cf. docs/dataset.md).
+  min_capacity_ratio: 0.25
+  max_capacity_ratio: 1.25
+
+models:
+  ev_battery:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  ev_battery:
+    +schema: staging

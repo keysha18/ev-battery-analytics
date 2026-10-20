@@ -2,11 +2,14 @@ include .env
 export
 
 export PATH := $(HOME)/.local/bin:$(PATH)
+export HOST_UID := $(shell id -u)
+export HOST_GID := $(shell id -g)
 
 COMPOSE := docker compose
+DBT     := $(COMPOSE) run --rm dbt
 PSQL    := $(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-.PHONY: help up down ps logs psql reset check download ingest checks test lint
+.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs
 
 help:  ## Liste les commandes
 	@grep -hE '^[a-z_]+:.*##' Makefile | awk -F':.*## ' '{printf "  %-9s %s\n", $$1, $$2}'
@@ -34,6 +37,15 @@ download:  ## Télécharge et extrait le dataset NASA (vérifié par sha256)
 
 ingest: up  ## Charge les .mat dans raw (rejouable sans doublons)
 	uv run python -m src.ingest
+
+dbt-deps:  ## Installe les packages dbt (dbt_utils)
+	$(DBT) deps
+
+dbt-build: up dbt-deps  ## Seeds + modèles + tests dbt (raw doit être chargé)
+	$(DBT) build
+
+dbt-docs:  ## Génère la doc dbt (dbt/target/)
+	$(DBT) docs generate
 
 checks:  ## Contrôles de cohérence du schéma raw (après ingest)
 	$(COMPOSE) exec -T postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) < tests/checks_raw.sql

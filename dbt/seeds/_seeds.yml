@@ -1,0 +1,47 @@
+version: 2
+
+seeds:
+  - name: nasa_cell_conditions
+    description: >
+      Conditions d'essai par cellule, transcrites à la main des README NASA (un par groupe de cellules).
+      Capacité nominale : 2,0 Ah, citée pour B0005-18 et cohérente avec les critères de fin de vie des
+      autres groupes (1,6 Ah = 20 % de perte, 1,4 Ah = 30 %). Pour les profils multi_level le courant
+      varie par cycle : utiliser le courant mesuré du cycle, pas cette table.
+    config:
+      column_types:
+        cell_id: text
+        readme_group: text
+        ambient_temp_nominal_c: numeric
+        discharge_profile: text
+        discharge_current_a: numeric
+        discharge_current_levels_a: text
+        cutoff_voltage_v: numeric
+        nominal_capacity_ah: numeric
+        eol_capacity_ah: numeric
+        readme_note: text
+    columns:
+      - name: cell_id
+        data_tests: [unique, not_null]
+      - name: discharge_profile
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [constant, square_wave, multi_level]
+      - name: cutoff_voltage_v
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1.5, max_value: 3.0}
+      - name: nominal_capacity_ah
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0.5, max_value: 5, inclusive: true}
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "eol_capacity_ah is null or eol_capacity_ah < nominal_capacity_ah"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "discharge_profile = 'multi_level' or discharge_current_a is not null"

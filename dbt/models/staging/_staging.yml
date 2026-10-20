@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: stg_nasa_cycles
+    description: Passage direct de raw.nasa_cycles (toutes natures de cycle), sans correction.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cell_id, cycle_idx]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "cycle_type = 'discharge' or capacity_ah is null"
+            config:
+              error_msg: "seules les décharges portent une capacité"
+    columns:
+      - name: cell_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('nasa_cell_conditions')
+                field: cell_id
+      - name: cycle_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [charge, discharge, impedance]
+      - name: start_time
+        data_tests: [not_null]
+
+  - name: stg_nasa_discharges
+    description: >
+      Une ligne par décharge, avec un indicateur de validité de la capacité. Les capacités
+      manquantes, nulles ou hors de [min_capacity_ratio, max_capacity_ratio] x capacité nominale
+      sont conservées mais marquées invalides.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cell_id, discharge_number]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "is_valid_capacity = (invalid_reason is null)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "capacity_ah > 0 and capacity_ah between {{ var('min_capacity_ratio') }} * nominal_capacity_ah and {{ var('max_capacity_ratio') }} * nominal_capacity_ah"
+            config:
+              where: "is_valid_capacity"
+    columns:
+      - name: nominal_capacity_ah
+        data_tests: [not_null]
+      - name: is_valid_capacity
+        data_tests: [not_null]
+      - name: invalid_reason
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [missing, non_positive, implausibly_low, implausibly_high]
+      - name: discharge_number
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1}
+
+  - name: stg_nasa_impedance
+    description: Une ligne par mesure d'impédance ; has_complex_re_rct signale les Re/Rct complexes (B0049, B0051).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cell_id, impedance_number]
+    columns:
+      - name: has_complex_re_rct
+        data_tests: [not_null]
+
+  - name: stg_nasa_discharge_samples
+    description: Séries temporelles complètes des décharges, cellules de démonstration uniquement.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cell_id, cycle_idx, sample_idx]
+    columns:
+      - name: cell_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('nasa_cell_conditions')
+                field: cell_id

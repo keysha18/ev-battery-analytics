@@ -1,0 +1,35 @@
+cell_id,readme_group,ambient_temp_nominal_c,discharge_profile,discharge_current_a,discharge_current_levels_a,cutoff_voltage_v,nominal_capacity_ah,eol_capacity_ah,readme_note
+B0005,g05_06_07_18,24,constant,2,2,2.7,2.0,1.4,
+B0006,g05_06_07_18,24,constant,2,2,2.5,2.0,1.4,
+B0007,g05_06_07_18,24,constant,2,2,2.2,2.0,1.4,
+B0018,g05_06_07_18,24,constant,2,2,2.5,2.0,1.4,
+B0025,g25_28,24,square_wave,4,4,2.0,2.0,,0.05 Hz square wave; 50% duty; 4 A amplitude; no EOL stated
+B0026,g25_28,24,square_wave,4,4,2.2,2.0,,0.05 Hz square wave; 50% duty; 4 A amplitude; no EOL stated
+B0027,g25_28,24,square_wave,4,4,2.5,2.0,,0.05 Hz square wave; 50% duty; 4 A amplitude; no EOL stated
+B0028,g25_28,24,square_wave,4,4,2.7,2.0,,0.05 Hz square wave; 50% duty; 4 A amplitude; no EOL stated
+B0029,g29_32,43,constant,4,4,2.0,2.0,,no EOL stated
+B0030,g29_32,43,constant,4,4,2.2,2.0,,no EOL stated
+B0031,g29_32,43,constant,4,4,2.5,2.0,,no EOL stated
+B0032,g29_32,43,constant,4,4,2.7,2.0,,no EOL stated
+B0033,g33_36,24,constant,4,4,2.0,2.0,1.6,
+B0034,g33_36,24,constant,4,4,2.2,2.0,1.6,
+B0036,g33_36,24,constant,2,2,2.7,2.0,1.6,
+B0038,g38_40,,multi_level,,1;2;4,2.2,2.0,1.6,ambient 24 and 44 C; several load levels
+B0039,g38_40,,multi_level,,1;2;4,2.5,2.0,1.6,ambient 24 and 44 C; several load levels
+B0040,g38_40,,multi_level,,1;2;4,2.7,2.0,1.6,ambient 24 and 44 C; several load levels
+B0041,g41_44,4,multi_level,,1;4,2.0,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0042,g41_44,4,multi_level,,1;4,2.2,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0043,g41_44,4,multi_level,,1;4,2.5,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0044,g41_44,4,multi_level,,1;4,2.7,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0045,g45_48,4,constant,1,1,2.0,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0046,g45_48,4,constant,1,1,2.2,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0047,g45_48,4,constant,1,1,2.5,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0048,g45_48,4,constant,1,1,2.7,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0049,g49_52,4,constant,2,2,2.0,2.0,,README: run ended when control software crashed; low capacity and voltage runs; reasons not analyzed
+B0050,g49_52,4,constant,2,2,2.2,2.0,,README: run ended when control software crashed; low capacity and voltage runs; reasons not analyzed
+B0051,g49_52,4,constant,2,2,2.5,2.0,,README: run ended when control software crashed; low capacity and voltage runs; reasons not analyzed
+B0052,g49_52,4,constant,2,2,2.7,2.0,,README: run ended when control software crashed; low capacity and voltage runs; reasons not analyzed
+B0053,g53_56,4,constant,2,2,2.0,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0054,g53_56,4,constant,2,2,2.2,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0055,g53_56,4,constant,2,2,2.5,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed
+B0056,g53_56,4,constant,2,2,2.7,2.0,1.4,README: several discharge runs with very low capacity; reasons not analyzed

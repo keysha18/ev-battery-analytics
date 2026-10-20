@@ -1,0 +1,23 @@
+select
+    cell_id,
+    cycle_idx,
+    cycle_type,
+    ambient_temp_c,
+    start_time,
+    n_samples,
+    duration_s,
+    capacity_ah,
+    v_min,
+    v_max,
+    i_min,
+    i_max,
+    i_median,
+    t_min,
+    t_max,
+    t_mean,
+    re_ohm,
+    rct_ohm,
+    re_imag_ohm,
+    rct_imag_ohm,
+    run_id
+from {{ source('raw', 'nasa_cycles') }}

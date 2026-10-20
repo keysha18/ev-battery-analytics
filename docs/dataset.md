@@ -43,3 +43,20 @@ Charger les séries intra-cycle complètes dans `raw` (volumineux) ou seulement 
 - **Capacités à 0 plus répandues que vu en échantillonnant** : 1 à 3 décharges à 0 dans B0042 à B0054 (sauf B0052), en plus des valeurs vides de B0050 (4) et B0052 (21). Conservées telles quelles dans raw (NULL pour vide, 0 pour 0).
 - **Chargement** : `make ingest` charge les 34 cellules en ~4 s. Les séries complètes de décharge ne sont chargées que pour B0005, B0006, B0007 et B0018 (185 721 lignes).
 - **Idempotence** : un hash sha256 par fichier et une version du loader (`LOADER_VERSION`) décident du rechargement ; toute modification du contenu produit par le loader doit incrémenter cette version.
+
+## Conditions d'essai (README, seed `dbt/seeds/nasa_cell_conditions.csv`)
+- Le courant de décharge **varie par cycle** pour B0038-40 (1, 2 et 4 A) et B0041-44 (1 et 4 A) : une valeur par cellule serait fausse, le staging expose le courant mesuré par décharge (`discharge_median_current_a`, `discharge_peak_current_a`).
+- B0025-28 : onde carrée 0,05 Hz, 4 A d'amplitude, rapport cyclique 50 % (courant médian ~0, d'où `discharge_peak_current_a`).
+- Tension de coupure de 2,0 à 2,7 V selon la cellule : les capacités de cellules à coupures différentes ne sont pas strictement comparables.
+- Fin de vie : 30 % de perte (1,4 Ah) pour B0005-18, B0041-48, B0053-56 ; 20 % (1,6 Ah) pour B0033-40 ; aucune pour B0025-32 ; B0049-52 arrêtées par un plantage du logiciel de contrôle.
+- Capacité nominale 2,0 Ah : citée pour B0005-18, déduite des critères de fin de vie pour les autres (1,6 = 80 %, 1,4 = 70 %).
+- **NASA reconnaît elle-même** des décharges « à capacité très basse, raisons non analysées » pour B0041-56. Ce ne sont donc pas des artefacts de notre pipeline.
+
+## Règles de validité des capacités (couche staging)
+Une décharge est conservée mais marquée invalide (`is_valid_capacity = false`, `invalid_reason`) si sa capacité est :
+`missing` (NULL), `non_positive` (<= 0), `implausibly_low` (< 25 % du nominal soit 0,5 Ah) ou `implausibly_high` (> 125 % soit 2,5 Ah).
+Les seuils sont les variables dbt `min_capacity_ratio` / `max_capacity_ratio`. Le choix de 25 % s'appuie sur la distribution observée : 227 mesures non nulles sous 0,5 Ah (dont 19 valeurs à 0 ; max 0,479), puis plus rien entre 0,479 et 0,527 Ah.
+
+Résultat sur les 2 794 décharges : 2 541 valides, 208 `implausibly_low` (8 cellules), 25 `missing` (B0050, B0052), 19 `non_positive` (12 cellules), 1 `implausibly_high` (B0050). Les 34 cellules ont au moins une décharge valide (capacités valides : 0,527 à 2,444 Ah).
+
+Limite connue : le seuil est une heuristique. Une capacité réellement très dégradée mais mesurée sous 0,5 Ah serait marquée invalide (par exemple le cycle isolé à 0,426 Ah de B0040, dont la dernière capacité est 0,557 Ah) ; c'est assumé pour ne pas mélanger des cycles défaillants à la courbe de dégradation, mais à revoir si l'analyse de l'étape 6 montre des courbes tronquées.

@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Sortie du loader Python (src/ingest) ; aucune valeur corrigée.
+    schema: raw
+    tables:
+      - name: nasa_cycles
+        description: Un résumé par cycle (charge, discharge, impedance) et par cellule NASA.
+      - name: nasa_discharge_samples
+        description: Séries temporelles complètes des décharges, cellules de démonstration uniquement.
+      - name: ingestion_runs
+        description: Journal des chargements (statut, hash du fichier, version du loader).
