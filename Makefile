@@ -9,7 +9,7 @@ COMPOSE := docker compose
 DBT     := $(COMPOSE) run --rm dbt
 PSQL    := $(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze api api-logs
+.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze api api-logs dashboard
 
 help:  ## Liste les commandes
 	@grep -hE '^[a-z_]+:.*##' Makefile | awk -F':.*## ' '{printf "  %-9s %s\n", $$1, $$2}'
@@ -50,6 +50,9 @@ dbt-docs:  ## Génère la doc dbt (dbt/target/)
 api:  ## Construit et lance l'API (http://localhost:8000/docs)
 	$(COMPOSE) --profile app up -d --build --wait api
 
+dashboard:  ## Construit et lance l'API et le dashboard (http://localhost:8501)
+	$(COMPOSE) --profile app up -d --build --wait api dashboard
+
 api-logs:  ## Logs de l'API
 	$(COMPOSE) logs -f api
 
@@ -63,7 +66,7 @@ test:  ## Tests unitaires + intégration (Postgres requis)
 	uv run pytest -q
 
 lint:  ## Ruff
-	uv run ruff check src tests
+	uv run ruff check src tests dashboard
 
 reset:  ## DÉTRUIT le volume de données et recrée la base
 	@read -p "Supprimer toutes les données Postgres ? [y/N] " a; [ "$$a" = "y" ]

@@ -4,9 +4,19 @@ from fastapi import APIRouter, Depends
 from psycopg import Connection
 
 from ..db import get_conn
-from ..schemas import FleetSummary
+from ..schemas import BacktestPoint, FleetSummary
 
 router = APIRouter(prefix="/fleet", tags=["fleet"])
+
+
+@router.get("/backtest", response_model=list[BacktestPoint], summary="Prévisions rejouées sur les fins de vie observées")
+def fleet_backtest(conn: Annotated[Connection, Depends(get_conn)]):
+    """Une ligne par (cellule, part de vie observée) : fin de vie prévue contre fin de vie réelle."""
+    return conn.execute(
+        """select cell_id, observed_fraction, predicted_eol_age_index, actual_eol_age_index, error_discharges,
+                  interval_low, interval_high, interval_covers_actual
+           from marts.rul_backtest order by observed_fraction, cell_id"""
+    ).fetchall()
 
 
 @router.get("/summary", response_model=FleetSummary, summary="Synthèse sur l'ensemble des cellules")

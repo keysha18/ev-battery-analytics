@@ -66,5 +66,26 @@ services:
       timeout: 5s
       retries: 5
 
+  dashboard:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    image: ev-battery-dashboard
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      # Le dashboard ne parle qu'à l'API : il n'a aucun identifiant de base de données
+      API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:${DASHBOARD_PORT:-8501}:8501"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8501/_stcore/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgdata:

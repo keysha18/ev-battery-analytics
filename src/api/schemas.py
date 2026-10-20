@@ -148,6 +148,17 @@ class BacktestByFraction(BaseModel):
     interval_coverage: float = Field(description="Part des cas où l'intervalle contient la vraie fin de vie.")
 
 
+class BacktestPoint(BaseModel):
+    cell_id: str
+    observed_fraction: float
+    predicted_eol_age_index: float
+    actual_eol_age_index: float
+    error_discharges: float = Field(description="Prévu - réel ; négatif = fin de vie prévue trop tôt.")
+    interval_low: float
+    interval_high: float | None
+    interval_covers_actual: bool
+
+
 class FleetSummary(BaseModel):
     n_batteries: int
     n_discharges: int

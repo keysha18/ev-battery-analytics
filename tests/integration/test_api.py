@@ -162,6 +162,14 @@ def test_fleet_summary(client):
     assert s["notes"]
 
 
+def test_fleet_backtest_rows_match_summary(client):
+    rows = client.get("/fleet/backtest").json()
+    summary = client.get("/fleet/summary").json()["backtest"]
+    assert len(rows) == 18 and sum(b["n_cells"] for b in summary) == 18
+    assert all(r["error_discharges"] == pytest.approx(r["predicted_eol_age_index"] - r["actual_eol_age_index"])
+               for r in rows)
+
+
 def test_api_connection_is_read_only(client):
     with client.app.state.pool.connection() as conn, pytest.raises(psycopg.Error):
         conn.execute("create table marts.should_not_exist (i int)")

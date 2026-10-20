@@ -10,6 +10,11 @@ api = [
     "psycopg[binary,pool]>=3.3.6",
     "uvicorn[standard]>=0.54.0",
 ]
+dashboard = [
+    "httpx>=0.28.1",
+    "plotly>=7.1.0",
+    "streamlit>=1.66.0",
+]
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
@@ -23,7 +28,7 @@ pipeline = [
 
 # En local, `uv run` installe tous les groupes ; l'image de l'API n'installe que `api`.
 [tool.uv]
-default-groups = ["dev", "pipeline", "api"]
+default-groups = ["dev", "pipeline", "api", "dashboard"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
@@ -34,3 +39,7 @@ filterwarnings = ["error::numpy.exceptions.ComplexWarning"]
 
 [tool.ruff]
 line-length = 110
+
+[tool.ruff.lint.per-file-ignores]
+# dict(key=...) est l'idiome des arguments Plotly (go.Scatter(line=dict(...)))
+"dashboard/charts.py" = ["C408"]
