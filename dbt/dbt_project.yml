@@ -15,6 +15,9 @@ vars:
   # Les capacités mesurées présentent une coupure nette entre ~0,48 Ah et ~0,53 Ah (cf. docs/dataset.md).
   min_capacity_ratio: 0.25
   max_capacity_ratio: 1.25
+  # Le seuil de fin de vie NASA (Ah absolus) n'est retenu que si le pic de capacité de la cellule
+  # le dépasse d'au moins ce facteur ; sinon le seuil est relatif au pic (cf. cell_degradation_summary).
+  eol_absolute_margin: 1.15
 
 models:
   ev_battery:

@@ -66,3 +66,78 @@ models:
         data_tests:
           - dbt_utils.accepted_range:
               arguments: {min_value: 0}
+
+  - name: fact_degradation
+    description: >
+      Trajectoire de capacité des décharges valides dans la condition principale de chaque cellule
+      (température et courant de crête les plus fréquents). Référence de dégradation = pic de la
+      capacité lissée ; is_post_peak marque la phase de dégradation.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cell_id, age_index]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "capacity_smooth_ah <= peak_smooth_ah"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "is_post_peak = (age_index >= peak_age_index)"
+    columns:
+      - name: cell_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_battery')
+                field: cell_id
+      - name: age_index
+        description: Rang de la décharge parmi celles de la condition principale (1 = première).
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1}
+      - name: soh_smooth_nominal
+        description: Capacité lissée / capacité nominale. Peut dépasser 1 si la capacité mesurée dépasse le nominal.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0.2, max_value: 1.3}
+
+  - name: cell_degradation_summary
+    description: >
+      Une ligne par cellule : pic de capacité, pente de perte après le pic (%/100 décharges),
+      qualité de l'ajustement (r2) et fin de vie observée. À lire avec n_post_peak et r2 : une
+      pente sur peu de points ou avec un r2 faible est peu fiable.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not reached_eol or has_eol_threshold"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not reached_eol or eol_age_index >= peak_age_index"
+    columns:
+      - name: cell_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_battery')
+                field: cell_id
+      - name: n_post_peak
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1}
+      - name: eol_basis
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [nasa_absolute, relative_to_peak]
+      - name: fade_estimate_quality
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [reliable, weak, insufficient]
+      - name: r2
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, max_value: 1}
