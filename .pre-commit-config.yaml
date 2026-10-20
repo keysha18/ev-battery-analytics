@@ -1,0 +1,28 @@
+# Installation : make hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: detect-private-key
+      # data/ pèse ~400 Mo et .env contient des mots de passe : ni l'un ni l'autre ne doit être commité
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+
+  # Même version de ruff que celle verrouillée dans uv.lock
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
+    hooks:
+      - id: ruff-check
+
+  - repo: local
+    hooks:
+      - id: no-env-file
+        name: .env ne doit pas être commité
+        language: fail
+        entry: ".env contient des mots de passe : il est dans .gitignore, ne pas le forcer"
+        files: '(^|/)\.env$'

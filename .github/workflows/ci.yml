@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Le workflow ne lit que le dépôt
+permissions:
+  contents: read
+
+# Un nouveau push annule la CI en cours sur la même branche
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.13.3"   # même version que dans les Dockerfile
+
+jobs:
+  lint-and-unit:
+    name: Lint et tests unitaires
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check src tests dashboard
+      # Les tests d'intégration ont besoin de la base : ils tournent dans le job suivant
+      - run: uv run pytest -m "not integration" -q
+
+  pipeline:
+    name: Pipeline complet (ingestion, dbt, analyse, API, dashboard)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+
+      # Valeurs factices : la base n'existe que le temps du job
+      - name: Configuration
+        run: cp .env.example .env
+
+      - name: PostgreSQL
+        run: make up
+
+      # Le zip NASA (200 Mo) est mis en cache ; son sha256 est de toute façon revérifié au téléchargement
+      - name: Cache du dataset NASA
+        uses: actions/cache@v6
+        with:
+          path: data/nasa_zip
+          key: nasa-battery-zip-82302a7db4fc
+
+      - name: Télécharger le dataset
+        run: make download
+
+      - name: Ingestion (.mat vers raw)
+        run: make ingest
+
+      - name: Idempotence de l'ingestion (deuxième passe)
+        run: |
+          out=$(uv run python -m src.ingest | tail -1)
+          echo "$out"
+          echo "$out" | grep -q "success=0 | skipped_unchanged=34" \
+            || { echo "::error::la deuxième ingestion a rechargé des données"; exit 1; }
+
+      - name: dbt (seeds, modèles, tests)
+        run: make dbt-build
+
+      - name: Analyse (genou et fin de vie)
+        run: make analyze
+
+      - name: Contrôles de cohérence
+        run: |
+          make check
+          make checks
+
+      - name: Tests (unitaires et intégration)
+        run: make test
+
+      - name: Images API et dashboard
+        run: make dashboard
+
+      - name: Smoke test des services
+        run: |
+          curl -fsS localhost:8000/health
+          curl -fsS localhost:8000/batteries/B0005/rul | grep -q '"status":"observed"'
+          curl -fsS localhost:8501/_stcore/health
+
+      - name: Logs en cas d'échec
+        if: failure()
+        run: docker compose --profile app --profile tools logs --no-color --tail 80
+
+      - name: Nettoyage
+        if: always()
+        run: docker compose --profile app --profile tools down -v

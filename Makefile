@@ -9,7 +9,7 @@ COMPOSE := docker compose
 DBT     := $(COMPOSE) run --rm dbt
 PSQL    := $(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze api api-logs dashboard
+.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze api api-logs dashboard hooks
 
 help:  ## Liste les commandes
 	@grep -hE '^[a-z_]+:.*##' Makefile | awk -F':.*## ' '{printf "  %-9s %s\n", $$1, $$2}'
@@ -61,6 +61,9 @@ analyze:  ## Genou + fin de vie (Python) -> marts.cell_lifetime / rul_backtest (
 
 checks:  ## Contrôles de cohérence du schéma raw (après ingest)
 	$(COMPOSE) exec -T postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) < tests/checks_raw.sql
+
+hooks:  ## Installe les hooks pre-commit (ruff, fichiers volumineux, secrets)
+	uv run pre-commit install
 
 test:  ## Tests unitaires + intégration (Postgres requis)
 	uv run pytest -q
