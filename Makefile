@@ -12,7 +12,7 @@ PSQL    := $(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 .PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze api api-logs dashboard hooks
 
 help:  ## Liste les commandes
-	@grep -hE '^[a-z_]+:.*##' Makefile | awk -F':.*## ' '{printf "  %-9s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z_-]+:.*##' Makefile | awk -F':.*## ' '{printf "  %-11s %s\n", $$1, $$2}'
 
 up:  ## Démarre Postgres et attend qu'il soit prêt
 	$(COMPOSE) up -d --wait postgres
