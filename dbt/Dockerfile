@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 # dbt-core est figé explicitement : sans cela pip résout vers une préversion (1.13.0b1)
 RUN pip install --no-cache-dir "dbt-core==1.12.6" "dbt-postgres==1.11.0"
