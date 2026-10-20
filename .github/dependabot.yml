@@ -9,6 +9,11 @@ updates:
     directories: [/, /dbt]
     schedule:
       interval: monthly
+    # La version de Python est choisie à la main (uv.lock, .python-version, compatibilité dbt) :
+    # seules les mises à jour de correctif sont proposées
+    ignore:
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   # Dépendances Python (uv.lock)
   - package-ecosystem: uv
