@@ -27,7 +27,7 @@ chaîne de données fiable, et comment dire honnêtement ce que les données per
 - **Analyse de dégradation** : état de santé (SOH), pente de perte, détection du « genou », prévision de fin de
   vie validée par un **backtest**.
 - **API en lecture seule** (rôle PostgreSQL dédié) et **dashboard** qui ne lit que l'API.
-- **Industrialisation** : Docker, CI GitHub Actions qui reconstruit tout de zéro, pre-commit, 93 tests.
+- **Industrialisation** : Docker, CI GitHub Actions qui reconstruit tout de zéro, pre-commit, 95 tests.
 
 ## Aperçu
 
