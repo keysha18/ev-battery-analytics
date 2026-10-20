@@ -9,7 +9,7 @@ COMPOSE := docker compose
 DBT     := $(COMPOSE) run --rm dbt
 PSQL    := $(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze api api-logs dashboard hooks
+.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze api api-logs dashboard site hooks
 
 help:  ## Liste les commandes
 	@grep -hE '^[a-z_-]+:.*##' Makefile | awk -F':.*## ' '{printf "  %-11s %s\n", $$1, $$2}'
@@ -62,6 +62,9 @@ analyze:  ## Genou + fin de vie (Python) -> marts.cell_lifetime / rul_backtest (
 checks:  ## Contrôles de cohérence du schéma raw (après ingest)
 	$(COMPOSE) exec -T postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) < tests/checks_raw.sql
 
+site:  ## Régénère docs/index.html (page de présentation) depuis l'API (make api d'abord)
+	uv run python scripts/build_site.py
+
 hooks:  ## Installe les hooks pre-commit (ruff, fichiers volumineux, secrets)
 	uv run pre-commit install
 
@@ -69,7 +72,7 @@ test:  ## Tests unitaires + intégration (Postgres requis)
 	uv run pytest -q
 
 lint:  ## Ruff
-	uv run ruff check src tests dashboard
+	uv run ruff check src tests dashboard scripts
 
 reset:  ## DÉTRUIT le volume de données et recrée la base
 	@read -p "Supprimer toutes les données Postgres ? [y/N] " a; [ "$$a" = "y" ]

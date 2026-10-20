@@ -123,6 +123,20 @@ def test_compare_since_peak_keeps_only_post_peak_points_aligned_on_zero():
     assert min(fig.data[0].x) == 0 and len(fig.data[0].x) == 36
 
 
+def test_compare_skips_an_end_label_that_would_cover_another_curve():
+    # A finit à 40 sur la courbe de B (qui continue jusqu'à 60 à la même hauteur) : pas d'étiquette pour A
+    a = soh(n=40, cap0=1.9, step=0.01)
+    b = soh(n=60, cap0=1.9, step=0.0067)  # même valeur autour du rang 40, mais s'étend plus loin
+    fig = charts.compare_figure({"A": a, "B": b}, {"A": 0, "B": 1}, "ah", False, T)
+    labels = [an.text for an in fig.layout.annotations]
+    assert "A" not in labels and "B" in labels
+
+
+def test_compare_labels_are_not_drawn_on_a_background():
+    fig = charts.compare_figure({"A": soh(cap0=1.9), "B": soh(cap0=1.2)}, {"A": 0, "B": 1}, "ah", False, T)
+    assert all(an.bgcolor is None for an in fig.layout.annotations)  # un fond masquerait la courbe dessous
+
+
 def test_compare_marks_only_the_last_point():
     fig = charts.compare_figure({"A": soh()}, {"A": 0}, "ah", False, T)
     sizes = list(fig.data[0].marker.size)

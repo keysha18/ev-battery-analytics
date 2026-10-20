@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dégradation de batteries Li-ion : projet data engineering</title>
+<meta name="description" content="Pipeline de data engineering de bout en bout sur 34 cellules Li-ion de la NASA : ingestion, PostgreSQL, dbt, analyse de fin de vie, API FastAPI et dashboard.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%8B%3C/text%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --text: #0b0b0b; --text2: #52514e; --muted: #6f6d68;
+  --hair: #e1e0d9; --border: rgba(11,11,11,.10); --accent: #1c5cab; --fill: #2a78d6; --on-fill: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --text: #f0efec; --text2: #c3c2b7; --muted: #a09e96;
+    --hair: #2c2c2a; --border: rgba(255,255,255,.10); --accent: #6da7ec; --fill: #3987e5; --on-fill: #0b0b0b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --text: #f0efec; --text2: #c3c2b7; --muted: #a09e96;
+  --hair: #2c2c2a; --border: rgba(255,255,255,.10); --accent: #6da7ec; --fill: #3987e5; --on-fill: #0b0b0b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--text); line-height: 1.6;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { line-height: 1.2; margin: 0; }
+header { padding: 56px 0 8px; }
+.kicker { color: var(--text2); font-size: 14px; letter-spacing: .02em; margin: 0 0 12px; }
+h1 { font-size: clamp(28px, 5vw, 42px); font-weight: 650; max-width: 28ch; }
+.lead { color: var(--text2); font-size: 18px; max-width: 62ch; margin: 18px 0 24px; }
+.btns { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn {
+  display: inline-block; padding: 10px 18px; border-radius: 8px; font-weight: 600; text-decoration: none;
+  border: 1px solid var(--border); color: var(--text); background: var(--surface);
+}
+.btn.primary { background: var(--fill); color: var(--on-fill); border-color: transparent; }
+.snap {
+  margin: 28px 0 0; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text2); font-size: 14px;
+}
+section.block { padding: 48px 0 0; }
+h2 { font-size: 26px; margin-bottom: 8px; }
+.sub { color: var(--text2); margin: 0 0 20px; max-width: 70ch; }
+.hero { margin-top: 8px; }
+.hero-v { font-size: 64px; font-weight: 650; line-height: 1; }
+.hero-l { color: var(--text2); margin-top: 6px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 22px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.tile-v { font-size: 26px; font-weight: 650; line-height: 1.2; }
+.tile-l { font-size: 14px; }
+.tile-n { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.pipe { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: s;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.pipe li { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px 14px 52px;
+           position: relative; counter-increment: s; }
+.pipe li::before {
+  content: counter(s); position: absolute; left: 14px; top: 14px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--fill); color: var(--on-fill); display: grid; place-items: center; font-weight: 650; font-size: 14px;
+}
+.pipe b { display: block; }
+.pipe span { color: var(--text2); font-size: 14px; }
+.chart { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 20px 12px;
+         margin: 20px 0; }
+.chart h3 { font-size: 20px; margin-bottom: 6px; }
+.chart p { color: var(--text2); margin: 0 0 8px; }
+.plot { width: 100%; min-height: 460px; }
+.caveats { color: var(--text2); font-size: 14px; margin: 4px 0 8px; padding-left: 20px; }
+details { margin: 8px 0 4px; }
+summary { cursor: pointer; color: var(--accent); font-size: 14px; padding: 6px 0; }
+.tablewrap { max-height: 320px; overflow: auto; border: 1px solid var(--hair); border-radius: 8px; margin-top: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--hair); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--surface); }
+.limits { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 24px 8px 40px; }
+.limits li { margin: 10px 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; margin: 0; }
+.chips li { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 4px 14px; font-size: 14px; }
+footer { margin: 64px 0 40px; padding-top: 20px; border-top: 1px solid var(--hair); color: var(--text2); font-size: 14px; }
+@media (max-width: 560px) {
+  header { padding-top: 36px; }
+  .hero-v { font-size: 52px; }
+  .chart { padding: 16px 12px 8px; }
+  .plot { min-height: 380px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p class="kicker">Projet de data engineering</p>
+    <h1>Dégradation de batteries Li-ion : du fichier brut à l'API</h1>
+    <p class="lead">Un pipeline complet construit sur les données de 34 cellules de la NASA : ingestion idempotente,
+      PostgreSQL, transformations dbt, analyse de fin de vie, API FastAPI et dashboard.</p>
+    <div class="btns">
+      <a class="btn primary" href="@@REPO@@">Voir le code sur GitHub</a>
+      <a class="btn" href="@@REPO@@/blob/main/docs/degradation.md">Lire la méthode et ses limites</a>
+    </div>
+    <p class="snap"><strong>Instantané du @@STAMP@@.</strong> Les chiffres et les graphiques ci-dessous viennent des
+      vrais résultats du projet, mais aucun serveur ne tourne derrière cette page : pour l'application complète
+      (API et dashboard), le projet se lance en quelques commandes (voir le dépôt).</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="block" aria-labelledby="h-chiffres">
+    <h2 id="h-chiffres">En chiffres</h2>
+    <div class="hero">
+      <div>
+        <div class="hero-v">@@HERO_N@@ / @@HERO_D@@</div>
+        <div class="hero-l">cellules ont franchi leur seuil de fin de vie</div>
+      </div>
+      <div class="tiles">@@TILES@@</div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-pipeline">
+    <h2 id="h-pipeline">Comment c'est construit</h2>
+    <p class="sub">Chaque étape est testée, et la CI GitHub reconstruit toute la chaîne depuis un dépôt vide.</p>
+    <ol class="pipe">
+      <li><b>Fichiers NASA (.mat)</b><span>34 cellules au format MATLAB brut, téléchargées avec vérification d'empreinte.</span></li>
+      <li><b>Ingestion Python</b><span>Idempotente : relancer ne duplique rien. Doublons et fichiers corrompus gérés.</span></li>
+      <li><b>PostgreSQL : raw, staging, marts</b><span>Transformations et tests dbt. Les valeurs douteuses sont marquées, pas supprimées.</span></li>
+      <li><b>Analyse Python</b><span>Pic de capacité, pente de perte, genou, prévision de fin de vie et backtest.</span></li>
+      <li><b>API FastAPI</b><span>Lecture seule, avec un rôle de base dédié. Chaque prévision porte ses réserves.</span></li>
+      <li><b>Dashboard Streamlit</b><span>Ne lit que l'API, jamais la base.</span></li>
+    </ol>
+  </section>
+
+  <section class="block" aria-labelledby="h-donnees">
+    <h2 id="h-donnees">Ce que montrent les données</h2>
+    <p class="sub">Graphiques interactifs : survolez les courbes pour lire les valeurs. Chaque graphique a son tableau de données.</p>
+    @@BLOCKS@@
+    <noscript><p class="snap">Les graphiques nécessitent JavaScript ; les tableaux de données restent disponibles sous chacun d'eux.</p></noscript>
+  </section>
+
+  <section class="block" aria-labelledby="h-limites">
+    <h2 id="h-limites">Ce que ce projet n'affirme pas</h2>
+    <ul class="limits">
+      <li>Les seuils (validité des capacités, marge sur le seuil NASA, fiabilité, détection du genou) sont des
+        <strong>heuristiques</strong>, non calibrées sur une vérité terrain.</li>
+      <li>Le backtest ne porte que sur <strong>quelques cellules</strong> : ce sont des ordres de grandeur, pas une validation.</li>
+      <li>Les groupes de cellules diffèrent par la température, le courant et la tension de coupure : un écart de
+        dégradation ne s'attribue pas à la température seule.</li>
+      <li>Ce n'est pas un modèle prédictif de production : c'est une démonstration de chaîne de données fiable, qui
+        dit honnêtement ce que les données permettent de conclure.</li>
+    </ul>
+  </section>
+
+  <section class="block" aria-labelledby="h-pratiques">
+    <h2 id="h-pratiques">Pratiques mises en œuvre</h2>
+    <ul class="chips">
+      <li>Ingestion idempotente</li><li>dbt : modèles et tests</li><li>Contrôles de cohérence entre couches</li>
+      <li>Tests unitaires et d'intégration</li><li>CI GitHub Actions</li><li>Docker Compose</li>
+      <li>Moindre privilège sur la base</li><li>pre-commit</li><li>Documentation de la méthode</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    Code sous licence MIT : <a href="@@REPO@@">github.com/keysha18/ev-battery-analytics</a>.
+    Données : NASA Ames Prognostics Center of Excellence (non redistribuées par ce dépôt).
+    Instantané généré le @@STAMP@@.
+  </div>
+</footer>
+
+<script src="https://cdn.plot.ly/plotly-@@PLOTLY_VERSION@@.min.js" charset="utf-8"></script>
+<script>
+(function () {
+  // ?theme=light|dark force un thème (utile pour vérifier les deux rendus) ; sinon, celui du navigateur
+  var forced = new URLSearchParams(location.search).get('theme');
+  if (forced === 'light' || forced === 'dark') document.documentElement.setAttribute('data-theme', forced);
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  function mode() {
+    var t = document.documentElement.getAttribute('data-theme');
+    return t ? t : (mq.matches ? 'dark' : 'light');
+  }
+  var charts = Array.prototype.map.call(document.querySelectorAll('[data-chart]'), function (el) {
+    return { el: el, fig: JSON.parse(document.getElementById(el.getAttribute('data-chart')).textContent) };
+  });
+  // Sur écran étroit : légende sous le tracé, libellés directs retirés (ils se chevauchent), tracé plus haut
+  var NARROW = 560;
+  function layoutFor(f, el) {
+    if (el.clientWidth >= NARROW) return f.layout;
+    var l = JSON.parse(JSON.stringify(f.layout));
+    l.height = 440;
+    l.margin = { l: 48, r: 12, t: 12, b: 110 };
+    l.legend = Object.assign({}, l.legend, { orientation: 'h', x: 0, y: -0.3, yanchor: 'top', font: { size: 11 } });
+    l.annotations = [];
+    return l;
+  }
+  function draw() {
+    if (!window.Plotly) return;
+    var m = mode();
+    charts.forEach(function (c) {
+      var f = c.fig[m];
+      c.narrow = c.el.clientWidth < NARROW;
+      window.Plotly.react(c.el, f.data, layoutFor(f, c.el),
+        { displaylogo: false, responsive: true, modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
+    });
+  }
+  draw();
+  if (mq.addEventListener) mq.addEventListener('change', draw);
+  // Redessine seulement quand on franchit le seuil d'écran étroit (rotation du téléphone, redimensionnement)
+  var timer;
+  window.addEventListener('resize', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      if (charts.some(function (c) { return (c.el.clientWidth < NARROW) !== c.narrow; })) draw();
+    }, 150);
+  });
+})();
+</script>
+</body>
+</html>

@@ -36,10 +36,10 @@ def _smooth_at(points: list[dict], age: float) -> float:
 
 
 def _note(fig, x, y, text, t, yshift=14, xanchor="center"):
-    # Fond de la couleur de surface : l'étiquette reste lisible là où elle croise une courbe
+    # Pas de fond : un fond masquerait la portion de courbe qu'il recouvre. C'est au placement
+    # d'éviter les données (ou à l'appelant de renoncer à l'étiquette).
     fig.add_annotation(x=x, y=y, text=text, showarrow=False, yshift=yshift, xanchor=xanchor,
-                       font=dict(color=t["text2"], size=12, family=FONT),
-                       bgcolor=t["surface"], opacity=0.9, borderpad=2)
+                       font=dict(color=t["text2"], size=12, family=FONT))
 
 
 def cell_figure(soh: dict, rul: dict, unit: str, t: dict) -> go.Figure:
@@ -83,7 +83,8 @@ def cell_figure(soh: dict, rul: dict, unit: str, t: dict) -> go.Figure:
             x=[ex], y=[thr * f], mode="markers", name="Fin de vie observée",
             marker=dict(size=11, color=t["text"], line=dict(color=t["surface"], width=2)),
             hovertemplate=f"décharge {ex}<extra>Fin de vie observée</extra>"))
-        _note(fig, ex, thr * f, f"fin de vie : décharge {ex}", t, yshift=-24)
+        # Au-dessus à droite : la courbe descend, cet espace est libre (sous le marqueur, elle passerait dessus)
+        _note(fig, ex, thr * f, f"fin de vie : décharge {ex}", t, yshift=18, xanchor="left")
 
     pred = rul.get("prediction")
     if pred:
@@ -120,6 +121,7 @@ def compare_figure(series: dict[str, dict], slots: dict[str, int], unit: str, si
     """Courbes lissées de plusieurs cellules (4 au plus). Couleur = cellule, jamais le rang."""
     fig = go.Figure()
     ends = []
+    curves: dict[str, tuple[list, list]] = {}
     for cell_id, soh in series.items():
         ref = soh["reference"]
         pts = [p for p in soh["points"] if p["is_post_peak"] or not since_peak]
@@ -136,13 +138,25 @@ def compare_figure(series: dict[str, dict], slots: dict[str, int], unit: str, si
             marker=dict(size=sizes, color=color, line=dict(color=t["surface"], width=2)),
             hovertemplate=f"%{{y:.{nd}f}} {suffix}<extra>{cell_id}</extra>"))
         ends.append((cell_id, x[-1], y[-1]))
+        curves[cell_id] = (x, y)
 
     if ends:
-        ys = [e[2] for e in ends]
-        span = (max(ys) - min(ys)) or 1.0
+        all_x = [v for xs, _ in curves.values() for v in xs]
+        all_y = [v for _, ys in curves.values() for v in ys]
+        span_x = (max(all_x) - min(all_x)) or 1.0
+        span_y = (max(all_y) - min(all_y)) or 1.0
+
+        def on_another_curve(cell_id: str, ex: float, ey: float) -> bool:
+            """L'étiquette (placée à droite du dernier point) recouvrirait-elle la courbe d'une autre série ?"""
+            return any(
+                ex <= px <= ex + 0.10 * span_x and abs(py - ey) < 0.04 * span_y
+                for other, (ox, oy) in curves.items() if other != cell_id for px, py in zip(ox, oy, strict=True)
+            )
+
         placed = []
         for cell_id, ex, ey in sorted(ends, key=lambda e: e[2]):
-            if all(abs(ey - p) > 0.06 * span for p in placed):  # sinon : légende + info-bulle
+            # Étiquette seulement si elle est lisible ; sinon la légende et l'info-bulle identifient la série
+            if all(abs(ey - p) > 0.06 * span_y for p in placed) and not on_another_curve(cell_id, ex, ey):
                 _note(fig, ex, ey, cell_id, t, yshift=0, xanchor="left")
                 fig.layout.annotations[-1].update(xshift=10)
                 placed.append(ey)
