@@ -9,6 +9,8 @@ MATLAB bruts, PostgreSQL, transformations dbt, analyse de fin de vie, API FastAP
 Les données sont les 34 cellules du [NASA Ames Prognostics Center](https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/)
 (entrée « Battery Data Set »).
 
+**Page de présentation (graphiques interactifs) : <https://keysha18.github.io/ev-battery-analytics/>**
+
 ![Vue d'ensemble du dashboard](docs/img/dashboard-overview.jpg)
 
 Ce n'est **pas** un modèle prédictif prêt pour la production : c'est un projet qui montre comment construire une

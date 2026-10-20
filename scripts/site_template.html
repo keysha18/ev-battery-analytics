@@ -173,7 +173,8 @@ footer { margin: 64px 0 40px; padding-top: 20px; border-top: 1px solid var(--hai
   </div>
 </footer>
 
-<script src="https://cdn.plot.ly/plotly-@@PLOTLY_VERSION@@.min.js" charset="utf-8"></script>
+<!-- Paquet "basic" de Plotly (courbes, points, barres d'erreur) : 1,2 Mo au lieu de 4,7 Mo pour le paquet complet -->
+<script src="https://cdn.plot.ly/plotly-basic-@@PLOTLY_VERSION@@.min.js" charset="utf-8"></script>
 <script>
 (function () {
   // ?theme=light|dark force un thème (utile pour vérifier les deux rendus) ; sinon, celui du navigateur
