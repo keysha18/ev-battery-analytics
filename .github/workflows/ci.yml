@@ -67,9 +67,10 @@ jobs:
 
       - name: Idempotence de l'ingestion (deuxième passe)
         run: |
-          out=$(uv run python -m src.ingest | tail -1)
-          echo "$out"
-          echo "$out" | grep -q "success=0 | skipped_unchanged=34" \
+          # Via make : c'est lui qui exporte les variables du .env
+          out=$(make ingest 2>&1) || { echo "$out"; echo "::error::l'ingestion a planté"; exit 1; }
+          echo "$out" | tail -3
+          echo "$out" | grep -qF "success=0 | skipped_unchanged=34" \
             || { echo "::error::la deuxième ingestion a rechargé des données"; exit 1; }
 
       - name: dbt (seeds, modèles, tests)
