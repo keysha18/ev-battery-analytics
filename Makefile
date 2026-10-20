@@ -9,7 +9,7 @@ COMPOSE := docker compose
 DBT     := $(COMPOSE) run --rm dbt
 PSQL    := $(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze
+.PHONY: help up down ps logs psql reset check download ingest checks test lint dbt-deps dbt-build dbt-docs analyze api api-logs
 
 help:  ## Liste les commandes
 	@grep -hE '^[a-z_]+:.*##' Makefile | awk -F':.*## ' '{printf "  %-9s %s\n", $$1, $$2}'
@@ -46,6 +46,12 @@ dbt-build: up dbt-deps  ## Seeds + modèles + tests dbt (raw doit être chargé)
 
 dbt-docs:  ## Génère la doc dbt (dbt/target/)
 	$(DBT) docs generate
+
+api:  ## Construit et lance l'API (http://localhost:8000/docs)
+	$(COMPOSE) --profile app up -d --build --wait api
+
+api-logs:  ## Logs de l'API
+	$(COMPOSE) logs -f api
 
 analyze:  ## Genou + fin de vie (Python) -> marts.cell_lifetime / rul_backtest (après dbt-build)
 	uv run python -m src.analytics

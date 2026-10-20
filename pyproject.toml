@@ -2,18 +2,28 @@
 name = "ev-battery-analytics"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = [
+dependencies = []
+
+[dependency-groups]
+api = [
+    "fastapi>=0.151.0",
+    "psycopg[binary,pool]>=3.3.6",
+    "uvicorn[standard]>=0.54.0",
+]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+pipeline = [
     "numpy>=2.5.4",
-    "pandas>=3.0.6",
     "psycopg[binary]>=3.3.6",
     "scipy>=1.18.1",
 ]
 
-[dependency-groups]
-dev = [
-    "pytest>=9.1.1",
-    "ruff>=0.17.1",
-]
+# En local, `uv run` installe tous les groupes ; l'image de l'API n'installe que `api`.
+[tool.uv]
+default-groups = ["dev", "pipeline", "api"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
